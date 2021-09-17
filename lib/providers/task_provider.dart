@@ -15,8 +15,18 @@ class TasksProvider with ChangeNotifier {
 
   List<HiveTaskModel> get getTask => this._tasks;
 
-  void set addTask(HiveTaskModel data) {
+  set addTask(HiveTaskModel data) {
     this._tasks = [...this._tasks, data];
+    notifyListeners();
+  }
+
+  void editTask(int index, HiveTaskModel payload) {
+    this._tasks[index] = payload;
+    notifyListeners();
+  }
+
+  void deleteTask(int index) {
+    this._tasks.removeAt(index);
     notifyListeners();
   }
 }

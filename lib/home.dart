@@ -24,6 +24,12 @@ class _HomeState extends State<Home> {
     getTask();
   }
 
+  void onDelete(int index) {
+    LocalCachingSevices.instance.removecachedTaskModel(index);
+    NotificationServices.instance.unsubscribe(index);
+    context.read<TasksProvider>().deleteTask(index);
+  }
+
   void getTask() async {
     final data = await LocalCachingSevices.instance.getcachedTaskModel();
     if (data != null) {
@@ -86,9 +92,9 @@ class _HomeState extends State<Home> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => EditTask(
-                                      title: model.getTask[i].title,
-                                      description: model.getTask[i].description,
-                                      DueTime: model.getTask[i].dueTime),
+                                    task: model.getTask[i],
+                                    index: i,
+                                  ),
                                 ));
                             setState(() {
                               print("called setState");
@@ -99,11 +105,7 @@ class _HomeState extends State<Home> {
                           caption: 'Delete',
                           color: Colors.red,
                           icon: Icons.delete,
-                          onTap: () {
-                            setState(() {
-                              // tasks.removeAt(i);
-                            });
-                          },
+                          onTap: () => onDelete(i),
                         ),
                       ],
                     ),

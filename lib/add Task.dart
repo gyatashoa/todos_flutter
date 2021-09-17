@@ -50,6 +50,8 @@ class _AddTaskState extends State<AddTask> {
     if (titleController.text == "" ||
         descriptionController.text == "" ||
         timeController.text == "" ||
+        timeController.text == "null" ||
+        dateController.text == "null" ||
         dateController.text == "") {
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Please fill all required fields")));
@@ -145,7 +147,9 @@ class _AddTaskState extends State<AddTask> {
                       ),
                       onPressed: () async {
                         final data = await showTimePicker(
-                            context: context, initialTime: TimeOfDay.now());
+                            context: context,
+                            initialTime: TimeOfDay.fromDateTime(
+                                DateTime.now().add(Duration(minutes: 2))));
                         timeController.text = data.toString();
                         time = data;
                       },
@@ -172,7 +176,7 @@ class _AddTaskState extends State<AddTask> {
                             initialEntryMode: DatePickerEntryMode.calendar,
                             context: context,
                             firstDate: DateTime.now(),
-                            lastDate: DateTime.now(),
+                            lastDate: DateTime(2050),
                             initialDate: DateTime.now());
                         // date = data;
                         dateController.text = data.toString();

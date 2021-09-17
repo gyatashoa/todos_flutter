@@ -25,4 +25,11 @@ class LocalCachingSevices {
     box.close();
     return data;
   }
+
+  Future editCachedTaskModel(int index, HiveTaskModel payload) async {
+    // removecachedTaskModel(index);
+    var box = await Hive.openBox<HiveTaskModel>(this.boxName);
+    box.putAt(index, payload);
+    box.close();
+  }
 }
