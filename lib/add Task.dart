@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:todos/Task.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
+import 'package:todos/models/taskModel.dart';
+import 'package:todos/providers/task_provider.dart';
+import 'package:todos/services/local_caching_services.dart';
+import 'package:todos/services/notification_services.dart';
+
+import 'widgets/custom_date_field.dart';
 
 class AddTask extends StatefulWidget {
   const AddTask({Key? key}) : super(key: key);
@@ -13,7 +20,12 @@ class AddTask extends StatefulWidget {
 class _AddTaskState extends State<AddTask> {
   DateTime _date = DateTime.now();
   DateFormat _dateFormatter = DateFormat('MMM dd, yyy');
-  TextEditingController _dateController = TextEditingController();
+  TextEditingController dateController = TextEditingController();
+  TextEditingController timeController = TextEditingController();
+  TextEditingController titleController = TextEditingController();
+  TextEditingController descriptionController = TextEditingController();
+  TimeOfDay? time;
+  // DateTime? date;
   _handleDatePicker() async {
     final DateTime? date = await showDatePicker(
       context: context,
@@ -27,12 +39,36 @@ class _AddTaskState extends State<AddTask> {
         //print("date: $_date");
       });
     }
-    _dateController.text = _dateFormatter.format(date!);
+    // _dateController.text = _dateFormatter.format(date!);
   }
 
   var title;
   var description;
   var DueTime;
+
+  void addTask(TasksProvider provider) async {
+    if (titleController.text == "" ||
+        descriptionController.text == "" ||
+        timeController.text == "" ||
+        dateController.text == "") {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Please fill all required fields")));
+      return;
+    }
+    final date = DateTime.parse(dateController.text);
+    final scheduled =
+        DateTime.utc(date.year, date.month, date.day, time!.hour, time!.minute);
+
+    final data = HiveTaskModel()
+      ..title = this.titleController.text
+      ..description = this.descriptionController.text
+      ..dueTime = scheduled;
+    await LocalCachingSevices.instance.addCacheTaskModel(data);
+    provider.addTask = data;
+    int index = provider.getTask.length - 1;
+    await NotificationServices.instance.subscribe(data, index);
+    Navigator.pop(context);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,106 +92,139 @@ class _AddTaskState extends State<AddTask> {
       ),
       body: Container(
         margin: EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 0.0),
-        child: Column(
-          children: [
-            Container(
-              padding: EdgeInsets.all(16),
-              child: TextField(
-                obscureText: false,
-                onSubmitted: (String value) {
-                  title = value;
-                  print("title: $title");
-                },
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'title',
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Container(
+                padding: EdgeInsets.all(16),
+                child: TextField(
+                  controller: titleController,
+                  obscureText: false,
+                  onSubmitted: (String value) {
+                    title = value;
+                    print("title: $title");
+                  },
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'title',
+                  ),
                 ),
               ),
-            ),
-            SizedBox(
-              height: 10.0,
-            ),
-            Container(
-              padding: EdgeInsets.all(15),
-              child: TextField(
-                obscureText: false,
-                onSubmitted: (String value) {
-                  description = value;
-                  print("description: $description");
-                },
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'description',
+              SizedBox(
+                height: 10.0,
+              ),
+              Container(
+                padding: EdgeInsets.all(15),
+                child: TextField(
+                  controller: descriptionController,
+                  obscureText: false,
+                  onSubmitted: (String value) {
+                    description = value;
+                    print("description: $description");
+                  },
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'description',
+                  ),
                 ),
               ),
-            ),
-            SizedBox(
-              height: 10.0,
-            ),
-            Container(
-              padding: EdgeInsets.all(15),
-              child: TextField(
-                obscureText: false,
-                onSubmitted: (String value) {
-                  DueTime = value;
-                  print("Due Time: $DueTime");
-                },
-                controller: _dateController,
-                onTap: _handleDatePicker,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Due Time',
+              SizedBox(
+                height: 10.0,
+              ),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: CustomDateField(timeController, 'Due Time'),
+                    ),
+                    TextButton(
+                      child: Icon(
+                        Icons.timer,
+                      ),
+                      onPressed: () async {
+                        final data = await showTimePicker(
+                            context: context, initialTime: TimeOfDay.now());
+                        timeController.text = data.toString();
+                        time = data;
+                      },
+                    )
+                  ],
                 ),
               ),
-            ),
-            Container(
-              padding: EdgeInsets.all(15),
-              child: TextField(
-                obscureText: false,
-                onSubmitted: (String value) {
-                  DueTime = value;
-                  print("Due Time: $DueTime");
-                },
-                controller: _dateController,
-                onTap: _handleDatePicker,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Due Time',
+              SizedBox(
+                height: 10.0,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: CustomDateField(dateController, 'Date'),
+                    ),
+                    TextButton(
+                      child: Icon(
+                        Icons.calendar_today,
+                      ),
+                      onPressed: () async {
+                        final data = await showDatePicker(
+                            initialEntryMode: DatePickerEntryMode.calendar,
+                            context: context,
+                            firstDate: DateTime.now(),
+                            lastDate: DateTime.now(),
+                            initialDate: DateTime.now());
+                        // date = data;
+                        dateController.text = data.toString();
+                      },
+                    )
+                  ],
                 ),
               ),
-            ),
-            SizedBox(
-              height: 10.0,
-            ),
-            ElevatedButton(
-                onPressed: () {
-                  /*DatePicker.showTime12hPicker(context,
-                  showTitleActions: true,
-                  minTime: DateTime(2018, 3, 5),
-                  maxTime: DateTime(2019, 6, 7), onChanged: (date) {
-                    print('change $date');
-                  }, onConfirm: (date) {
-                    print('confirm $date');
-                  }, currentTime: DateTime.now(), locale: LocaleType.en);*/
-                  DatePicker.showTime12hPicker(context);
-                },
-                child: Text("select time")),
-            SizedBox(
-              height: 10.0,
-            ),
-            ElevatedButton(
-                onPressed: () {
-                  Task newTask = Task(
-                    title,
-                    DueTime,
-                    description,
-                  );
-                  print("task in add task: $newTask");
-                  print("newTask title: ${newTask.getTitle()}");
-                  Navigator.pop(context, newTask);
-                },
-                child: Text("Add Task")),
-          ],
+              // Container(
+              //   padding: EdgeInsets.all(15),
+              //   child: TextField(
+              //     obscureText: false,
+              //     onSubmitted: (String value) {
+              //       DueTime = value;
+              //       print("Due Time: $DueTime");
+              //     },
+              //     controller: _dateController,
+              //     onTap: _handleDatePicker,
+              //     decoration: InputDecoration(
+              //       border: OutlineInputBorder(),
+              //       labelText: 'Due Time',
+              //     ),
+              //   ),
+              // ),
+              SizedBox(
+                height: 10.0,
+              ),
+              // ElevatedButton(
+              //     onPressed: () {
+              //       /*DatePicker.showTime12hPicker(context,
+              //       showTitleActions: true,
+              //       minTime: DateTime(2018, 3, 5),
+              //       maxTime: DateTime(2019, 6, 7), onChanged: (date) {
+              //         print('change $date');
+              //       }, onConfirm: (date) {
+              //         print('confirm $date');
+              //       }, currentTime: DateTime.now(), locale: LocaleType.en);*/
+              //       DatePicker.showTime12hPicker(context);
+              //     },
+              //     child: Text("select time")),
+              SizedBox(
+                height: 10.0,
+              ),
+              Consumer<TasksProvider>(builder: (context, provider, _) {
+                return ElevatedButton(
+                    onPressed: () async {
+                      addTask(provider);
+                    },
+                    child: Text("Add Task"));
+              }),
+            ],
+          ),
         ),
       ),
     );
