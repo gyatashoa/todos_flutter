@@ -5,6 +5,7 @@ import 'package:todos/models/taskModel.dart';
 import 'package:todos/providers/task_provider.dart';
 import 'package:todos/services/local_caching_services.dart';
 import 'package:todos/services/notification_services.dart';
+import 'package:todos/utils/dateTimeUtils.dart';
 import 'edit Task.dart';
 import 'package:todos/Task.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -79,7 +80,8 @@ class _HomeState extends State<Home> {
                             foregroundColor: Colors.white,
                           ),
                           title: Text("${model.getTask[i].title}"),
-                          subtitle: Text("${model.getTask[i].dueTime}"),
+                          subtitle: Text(DateTimeUtils.formatDateTime(
+                              model.getTask[i].dueTime!)),
                         ),
                       ),
                       secondaryActions: [

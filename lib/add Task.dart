@@ -7,6 +7,7 @@ import 'package:todos/models/taskModel.dart';
 import 'package:todos/providers/task_provider.dart';
 import 'package:todos/services/local_caching_services.dart';
 import 'package:todos/services/notification_services.dart';
+import 'package:todos/utils/dateTimeUtils.dart';
 
 import 'widgets/custom_date_field.dart';
 
@@ -25,22 +26,9 @@ class _AddTaskState extends State<AddTask> {
   TextEditingController titleController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
   TimeOfDay? time;
+  DateTime? date;
   // DateTime? date;
-  _handleDatePicker() async {
-    final DateTime? date = await showDatePicker(
-      context: context,
-      initialDate: _date,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2050),
-    );
-    if (date != null && date != _date) {
-      setState(() {
-        _date = date;
-        //print("date: $_date");
-      });
-    }
-    // _dateController.text = _dateFormatter.format(date!);
-  }
+  // _dateController.text = _dateFormatter.format(date!);
 
   var title;
   var description;
@@ -57,9 +45,8 @@ class _AddTaskState extends State<AddTask> {
           SnackBar(content: Text("Please fill all required fields")));
       return;
     }
-    final date = DateTime.parse(dateController.text);
-    final scheduled =
-        DateTime.utc(date.year, date.month, date.day, time!.hour, time!.minute);
+    final scheduled = DateTime.utc(
+        date!.year, date!.month, date!.day, time!.hour, time!.minute);
 
     final data = HiveTaskModel()
       ..title = this.titleController.text
@@ -150,8 +137,11 @@ class _AddTaskState extends State<AddTask> {
                             context: context,
                             initialTime: TimeOfDay.fromDateTime(
                                 DateTime.now().add(Duration(minutes: 2))));
-                        timeController.text = data.toString();
-                        time = data;
+                        if (data != null) {
+                          timeController.text =
+                              DateTimeUtils.formatTimeOnly(data!);
+                          time = data;
+                        }
                       },
                     )
                   ],
@@ -179,7 +169,11 @@ class _AddTaskState extends State<AddTask> {
                             lastDate: DateTime(2050),
                             initialDate: DateTime.now());
                         // date = data;
-                        dateController.text = data.toString();
+                        if (data != null) {
+                          dateController.text =
+                              DateTimeUtils.formatDateOnly(data!);
+                          date = data;
+                        }
                       },
                     )
                   ],

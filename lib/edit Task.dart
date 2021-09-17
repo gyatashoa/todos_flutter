@@ -5,6 +5,7 @@ import 'package:todos/models/taskModel.dart';
 import 'package:todos/providers/task_provider.dart';
 import 'package:todos/services/local_caching_services.dart';
 import 'package:todos/services/notification_services.dart';
+import 'package:todos/utils/dateTimeUtils.dart';
 
 import 'widgets/custom_date_field.dart';
 
@@ -28,6 +29,7 @@ class _EditTaskState extends State<EditTask> {
   final TextEditingController descriptionController = TextEditingController();
 
   TimeOfDay? time;
+  DateTime? date;
 
   @override
   void initState() {
@@ -51,9 +53,8 @@ class _EditTaskState extends State<EditTask> {
       return;
     }
 
-    final date = DateTime.parse(dateController.text);
-    final scheduled =
-        DateTime.utc(date.year, date.month, date.day, time!.hour, time!.minute);
+    final scheduled = DateTime.utc(
+        date!.year, date!.month, date!.day, time!.hour, time!.minute);
     final data = HiveTaskModel()
       ..title = this.titleController.text
       ..description = this.descriptionController.text
@@ -128,8 +129,10 @@ class _EditTaskState extends State<EditTask> {
                         context: context,
                         initialTime: TimeOfDay.fromDateTime(
                             DateTime.now().add(Duration(minutes: 2))));
-                    timeController.text = data.toString();
-                    time = data;
+                    if (data != null) {
+                      timeController.text = DateTimeUtils.formatTimeOnly(data);
+                      time = data;
+                    }
                   },
                 )
               ],
@@ -154,7 +157,10 @@ class _EditTaskState extends State<EditTask> {
                         lastDate: DateTime(2050),
                         initialDate: DateTime.now());
                     // date = data;
-                    dateController.text = data.toString();
+                    if (data != null) {
+                      dateController.text = DateTimeUtils.formatDateOnly(data);
+                      date = data;
+                    }
                   },
                 )
               ],
